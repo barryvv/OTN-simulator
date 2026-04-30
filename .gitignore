@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+venv/
+.venv/
+.venv-rag/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# Data outputs (regenerate on server)
+data_outputs*/
+
+# Model adapters / checkpoints (large)
+adapters/
+checkpoints/
+
+# RAG indexes (regenerate on server)
+rag_index/
+rag_index_noregen/
+rag_corpus/
+rag_corpus_noregen/
+
+# Simulator run outputs
+outputs/*
+!outputs/Static files/
+regen_compare/
+
+# Misc
+*.log
+.claude/

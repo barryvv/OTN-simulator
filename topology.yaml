@@ -1,0 +1,1342 @@
+network:
+  segments:
+  - segment_id: 1-4
+    a_end: 1
+    z_end: 4
+  - segment_id: 1-5
+    a_end: 1
+    z_end: 5
+  - segment_id: 2-3
+    a_end: 2
+    z_end: 3
+  segments_index: &id001
+    1-4:
+    - 1
+    - 4
+    1-5:
+    - 1
+    - 5
+    2-3:
+    - 2
+    - 3
+  segment_index: *id001
+node_map:
+  ROADM0: 1
+  ROADM1: 2
+  ROADM2: 3
+  ROADM3: 4
+  ROADM4: 5
+board_map:
+  ROADM0:
+    OA:
+    - ROADM0-OA001$0
+    - ROADM0-OA002$0
+    - ROADM0-OA003$0
+    - ROADM0-OA004$0
+    FIU:
+    - ROADM0-FIU001$0
+    - ROADM0-FIU002$0
+    OD:
+    - ROADM0-OD001$0
+    - ROADM0-OD002$0
+    OM:
+    - ROADM0-OM001$0
+    - ROADM0-OM002$0
+    TRIBUTARY:
+    - ROADM0-Tributary012$0
+    - ROADM0-Tributary032$0
+    XCON:
+    - ROADM0-XCON012$0
+    - ROADM0-XCON032$0
+    LINE:
+    - ROADM0-Line012$0
+    - ROADM0-Line032$0
+    SC2:
+    - ROADM0-SC021$0
+  ROADM1:
+    OA:
+    - ROADM1-OA001$0
+    - ROADM1-OA002$0
+    - ROADM1-OA003$0
+    - ROADM1-OA004$0
+    FIU:
+    - ROADM1-FIU001$0
+    - ROADM1-FIU002$0
+    OD:
+    - ROADM1-OD001$0
+    - ROADM1-OD002$0
+    OM:
+    - ROADM1-OM001$0
+    - ROADM1-OM002$0
+    TRIBUTARY:
+    - ROADM1-Tributary002$0
+    - ROADM1-Tributary011$0
+    XCON:
+    - ROADM1-XCON002$0
+    - ROADM1-XCON011$0
+    LINE:
+    - ROADM1-Line002$0
+    - ROADM1-Line011$0
+    SC2:
+    - ROADM1-SC021$0
+  ROADM2:
+    OA:
+    - ROADM2-OA001$0
+    - ROADM2-OA002$0
+    - ROADM2-OA003$0
+    - ROADM2-OA004$0
+    FIU:
+    - ROADM2-FIU001$0
+    - ROADM2-FIU002$0
+    OD:
+    - ROADM2-OD001$0
+    - ROADM2-OD002$0
+    OM:
+    - ROADM2-OM001$0
+    - ROADM2-OM002$0
+    TRIBUTARY:
+    - ROADM2-Tributary022$0
+    - ROADM2-Tributary029$0
+    XCON:
+    - ROADM2-XCON022$0
+    - ROADM2-XCON029$0
+    LINE:
+    - ROADM2-Line022$0
+    - ROADM2-Line029$0
+    SC2:
+    - ROADM2-SC021$0
+  ROADM3:
+    OA:
+    - ROADM3-OA001$0
+    - ROADM3-OA002$0
+    - ROADM3-OA003$0
+    - ROADM3-OA004$0
+    FIU:
+    - ROADM3-FIU001$0
+    - ROADM3-FIU002$0
+    OD:
+    - ROADM3-OD001$0
+    - ROADM3-OD002$0
+    OM:
+    - ROADM3-OM001$0
+    - ROADM3-OM002$0
+    TRIBUTARY:
+    - ROADM3-Tributary023$0
+    - ROADM3-Tributary062$0
+    XCON:
+    - ROADM3-XCON023$0
+    - ROADM3-XCON062$0
+    LINE:
+    - ROADM3-Line023$0
+    - ROADM3-Line062$0
+    SC2:
+    - ROADM3-SC021$0
+  ROADM4:
+    OA:
+    - ROADM4-OA001$0
+    - ROADM4-OA002$0
+    - ROADM4-OA003$0
+    - ROADM4-OA004$0
+    FIU:
+    - ROADM4-FIU001$0
+    - ROADM4-FIU002$0
+    OD:
+    - ROADM4-OD001$0
+    - ROADM4-OD002$0
+    OM:
+    - ROADM4-OM001$0
+    - ROADM4-OM002$0
+    TRIBUTARY:
+    - ROADM4-Tributary025$0
+    - ROADM4-Tributary096$0
+    XCON:
+    - ROADM4-XCON025$0
+    - ROADM4-XCON096$0
+    LINE:
+    - ROADM4-Line025$0
+    - ROADM4-Line096$0
+    SC2:
+    - ROADM4-SC021$0
+services:
+- src: 1
+  dst: 4
+  node_path: &id002
+  - 1
+  - 4
+  path_segments: &id003
+  - 1-4
+  path_segments_oriented: &id004
+  - 1->4
+  service_id: S1
+  vmf_path:
+  - vmf_id: 1_SRC_S1
+    role: SRC
+    node: 1
+    regen: false
+  - vmf_id: 1_RELAY_1-4_out
+    role: RELAY_OUT
+    node: 1
+    segment: 1-4
+    dir: out
+    regen: false
+  - vmf_id: 4_RELAY_1-4_in
+    role: RELAY_IN
+    node: 4
+    segment: 1-4
+    dir: in
+    regen: false
+  - vmf_id: 4_SNK_S1
+    role: SNK
+    node: 4
+    regen: false
+- src: 2
+  dst: 3
+  node_path: &id005
+  - 2
+  - 3
+  path_segments: &id006
+  - 2-3
+  path_segments_oriented: &id007
+  - 2->3
+  service_id: S2
+  vmf_path:
+  - vmf_id: 2_SRC_S2
+    role: SRC
+    node: 2
+    regen: false
+  - vmf_id: 2_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 2
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 3_RELAY_2-3_in
+    role: RELAY_IN
+    node: 3
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 3_SNK_S2
+    role: SNK
+    node: 3
+    regen: false
+- src: 3
+  dst: 2
+  node_path: &id008
+  - 3
+  - 2
+  path_segments: &id009
+  - 2-3
+  path_segments_oriented: &id010
+  - 3->2
+  service_id: S3
+  vmf_path:
+  - vmf_id: 3_SRC_S3
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S3
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: &id011
+  - 3
+  - 2
+  path_segments: &id012
+  - 2-3
+  path_segments_oriented: &id013
+  - 3->2
+  service_id: S4
+  vmf_path:
+  - vmf_id: 3_SRC_S4
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S4
+    role: SNK
+    node: 2
+    regen: false
+- src: 4
+  dst: 1
+  node_path: &id014
+  - 4
+  - 1
+  path_segments: &id015
+  - 1-4
+  path_segments_oriented: &id016
+  - 4->1
+  service_id: S5
+  vmf_path:
+  - vmf_id: 4_SRC_S5
+    role: SRC
+    node: 4
+    regen: false
+  - vmf_id: 4_RELAY_1-4_out
+    role: RELAY_OUT
+    node: 4
+    segment: 1-4
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-4_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-4
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S5
+    role: SNK
+    node: 1
+    regen: false
+- src: 4
+  dst: 1
+  node_path: &id017
+  - 4
+  - 1
+  path_segments: &id018
+  - 1-4
+  path_segments_oriented: &id019
+  - 4->1
+  service_id: S6
+  vmf_path:
+  - vmf_id: 4_SRC_S6
+    role: SRC
+    node: 4
+    regen: false
+  - vmf_id: 4_RELAY_1-4_out
+    role: RELAY_OUT
+    node: 4
+    segment: 1-4
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-4_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-4
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S6
+    role: SNK
+    node: 1
+    regen: false
+- src: 5
+  dst: 1
+  node_path: &id020
+  - 5
+  - 1
+  path_segments: &id021
+  - 1-5
+  path_segments_oriented: &id022
+  - 5->1
+  service_id: S7
+  vmf_path:
+  - vmf_id: 5_SRC_S7
+    role: SRC
+    node: 5
+    regen: false
+  - vmf_id: 5_RELAY_1-5_out
+    role: RELAY_OUT
+    node: 5
+    segment: 1-5
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-5_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-5
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S7
+    role: SNK
+    node: 1
+    regen: false
+- src: 5
+  dst: 1
+  node_path: &id023
+  - 5
+  - 1
+  path_segments: &id024
+  - 1-5
+  path_segments_oriented: &id025
+  - 5->1
+  service_id: S8
+  vmf_path:
+  - vmf_id: 5_SRC_S8
+    role: SRC
+    node: 5
+    regen: false
+  - vmf_id: 5_RELAY_1-5_out
+    role: RELAY_OUT
+    node: 5
+    segment: 1-5
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-5_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-5
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S8
+    role: SNK
+    node: 1
+    regen: false
+- src: 1
+  dst: 4
+  node_path: *id002
+  path_segments: *id003
+  path_segments_oriented: *id004
+  service_id: S9
+  vmf_path:
+  - vmf_id: 1_SRC_S9
+    role: SRC
+    node: 1
+    regen: false
+  - vmf_id: 1_RELAY_1-4_out
+    role: RELAY_OUT
+    node: 1
+    segment: 1-4
+    dir: out
+    regen: false
+  - vmf_id: 4_RELAY_1-4_in
+    role: RELAY_IN
+    node: 4
+    segment: 1-4
+    dir: in
+    regen: false
+  - vmf_id: 4_SNK_S9
+    role: SNK
+    node: 4
+    regen: false
+- src: 2
+  dst: 3
+  node_path: *id005
+  path_segments: *id006
+  path_segments_oriented: *id007
+  service_id: S10
+  vmf_path:
+  - vmf_id: 2_SRC_S10
+    role: SRC
+    node: 2
+    regen: false
+  - vmf_id: 2_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 2
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 3_RELAY_2-3_in
+    role: RELAY_IN
+    node: 3
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 3_SNK_S10
+    role: SNK
+    node: 3
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id008
+  path_segments: *id009
+  path_segments_oriented: *id010
+  service_id: S11
+  vmf_path:
+  - vmf_id: 3_SRC_S11
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S11
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id011
+  path_segments: *id012
+  path_segments_oriented: *id013
+  service_id: S12
+  vmf_path:
+  - vmf_id: 3_SRC_S12
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S12
+    role: SNK
+    node: 2
+    regen: false
+- src: 4
+  dst: 1
+  node_path: *id014
+  path_segments: *id015
+  path_segments_oriented: *id016
+  service_id: S13
+  vmf_path:
+  - vmf_id: 4_SRC_S13
+    role: SRC
+    node: 4
+    regen: false
+  - vmf_id: 4_RELAY_1-4_out
+    role: RELAY_OUT
+    node: 4
+    segment: 1-4
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-4_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-4
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S13
+    role: SNK
+    node: 1
+    regen: false
+- src: 4
+  dst: 1
+  node_path: *id017
+  path_segments: *id018
+  path_segments_oriented: *id019
+  service_id: S14
+  vmf_path:
+  - vmf_id: 4_SRC_S14
+    role: SRC
+    node: 4
+    regen: false
+  - vmf_id: 4_RELAY_1-4_out
+    role: RELAY_OUT
+    node: 4
+    segment: 1-4
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-4_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-4
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S14
+    role: SNK
+    node: 1
+    regen: false
+- src: 5
+  dst: 1
+  node_path: *id020
+  path_segments: *id021
+  path_segments_oriented: *id022
+  service_id: S15
+  vmf_path:
+  - vmf_id: 5_SRC_S15
+    role: SRC
+    node: 5
+    regen: false
+  - vmf_id: 5_RELAY_1-5_out
+    role: RELAY_OUT
+    node: 5
+    segment: 1-5
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-5_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-5
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S15
+    role: SNK
+    node: 1
+    regen: false
+- src: 5
+  dst: 1
+  node_path: *id023
+  path_segments: *id024
+  path_segments_oriented: *id025
+  service_id: S16
+  vmf_path:
+  - vmf_id: 5_SRC_S16
+    role: SRC
+    node: 5
+    regen: false
+  - vmf_id: 5_RELAY_1-5_out
+    role: RELAY_OUT
+    node: 5
+    segment: 1-5
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-5_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-5
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S16
+    role: SNK
+    node: 1
+    regen: false
+- src: 1
+  dst: 4
+  node_path: *id002
+  path_segments: *id003
+  path_segments_oriented: *id004
+  service_id: S17
+  vmf_path:
+  - vmf_id: 1_SRC_S17
+    role: SRC
+    node: 1
+    regen: false
+  - vmf_id: 1_RELAY_1-4_out
+    role: RELAY_OUT
+    node: 1
+    segment: 1-4
+    dir: out
+    regen: false
+  - vmf_id: 4_RELAY_1-4_in
+    role: RELAY_IN
+    node: 4
+    segment: 1-4
+    dir: in
+    regen: false
+  - vmf_id: 4_SNK_S17
+    role: SNK
+    node: 4
+    regen: false
+- src: 2
+  dst: 3
+  node_path: *id005
+  path_segments: *id006
+  path_segments_oriented: *id007
+  service_id: S18
+  vmf_path:
+  - vmf_id: 2_SRC_S18
+    role: SRC
+    node: 2
+    regen: false
+  - vmf_id: 2_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 2
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 3_RELAY_2-3_in
+    role: RELAY_IN
+    node: 3
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 3_SNK_S18
+    role: SNK
+    node: 3
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id008
+  path_segments: *id009
+  path_segments_oriented: *id010
+  service_id: S19
+  vmf_path:
+  - vmf_id: 3_SRC_S19
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S19
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id011
+  path_segments: *id012
+  path_segments_oriented: *id013
+  service_id: S20
+  vmf_path:
+  - vmf_id: 3_SRC_S20
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S20
+    role: SNK
+    node: 2
+    regen: false
+- src: 4
+  dst: 1
+  node_path: *id014
+  path_segments: *id015
+  path_segments_oriented: *id016
+  service_id: S21
+  vmf_path:
+  - vmf_id: 4_SRC_S21
+    role: SRC
+    node: 4
+    regen: false
+  - vmf_id: 4_RELAY_1-4_out
+    role: RELAY_OUT
+    node: 4
+    segment: 1-4
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-4_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-4
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S21
+    role: SNK
+    node: 1
+    regen: false
+- src: 4
+  dst: 1
+  node_path: *id017
+  path_segments: *id018
+  path_segments_oriented: *id019
+  service_id: S22
+  vmf_path:
+  - vmf_id: 4_SRC_S22
+    role: SRC
+    node: 4
+    regen: false
+  - vmf_id: 4_RELAY_1-4_out
+    role: RELAY_OUT
+    node: 4
+    segment: 1-4
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-4_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-4
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S22
+    role: SNK
+    node: 1
+    regen: false
+- src: 5
+  dst: 1
+  node_path: *id020
+  path_segments: *id021
+  path_segments_oriented: *id022
+  service_id: S23
+  vmf_path:
+  - vmf_id: 5_SRC_S23
+    role: SRC
+    node: 5
+    regen: false
+  - vmf_id: 5_RELAY_1-5_out
+    role: RELAY_OUT
+    node: 5
+    segment: 1-5
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-5_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-5
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S23
+    role: SNK
+    node: 1
+    regen: false
+- src: 5
+  dst: 1
+  node_path: *id023
+  path_segments: *id024
+  path_segments_oriented: *id025
+  service_id: S24
+  vmf_path:
+  - vmf_id: 5_SRC_S24
+    role: SRC
+    node: 5
+    regen: false
+  - vmf_id: 5_RELAY_1-5_out
+    role: RELAY_OUT
+    node: 5
+    segment: 1-5
+    dir: out
+    regen: false
+  - vmf_id: 1_RELAY_1-5_in
+    role: RELAY_IN
+    node: 1
+    segment: 1-5
+    dir: in
+    regen: false
+  - vmf_id: 1_SNK_S24
+    role: SNK
+    node: 1
+    regen: false
+- src: 2
+  dst: 3
+  node_path: *id005
+  path_segments: *id006
+  path_segments_oriented: *id007
+  service_id: S25
+  vmf_path:
+  - vmf_id: 2_SRC_S25
+    role: SRC
+    node: 2
+    regen: false
+  - vmf_id: 2_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 2
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 3_RELAY_2-3_in
+    role: RELAY_IN
+    node: 3
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 3_SNK_S25
+    role: SNK
+    node: 3
+    regen: false
+- src: 2
+  dst: 3
+  node_path: *id005
+  path_segments: *id006
+  path_segments_oriented: *id007
+  service_id: S26
+  vmf_path:
+  - vmf_id: 2_SRC_S26
+    role: SRC
+    node: 2
+    regen: false
+  - vmf_id: 2_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 2
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 3_RELAY_2-3_in
+    role: RELAY_IN
+    node: 3
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 3_SNK_S26
+    role: SNK
+    node: 3
+    regen: false
+- src: 2
+  dst: 3
+  node_path: *id005
+  path_segments: *id006
+  path_segments_oriented: *id007
+  service_id: S27
+  vmf_path:
+  - vmf_id: 2_SRC_S27
+    role: SRC
+    node: 2
+    regen: false
+  - vmf_id: 2_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 2
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 3_RELAY_2-3_in
+    role: RELAY_IN
+    node: 3
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 3_SNK_S27
+    role: SNK
+    node: 3
+    regen: false
+- src: 2
+  dst: 3
+  node_path: *id005
+  path_segments: *id006
+  path_segments_oriented: *id007
+  service_id: S28
+  vmf_path:
+  - vmf_id: 2_SRC_S28
+    role: SRC
+    node: 2
+    regen: false
+  - vmf_id: 2_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 2
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 3_RELAY_2-3_in
+    role: RELAY_IN
+    node: 3
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 3_SNK_S28
+    role: SNK
+    node: 3
+    regen: false
+- src: 2
+  dst: 3
+  node_path: *id005
+  path_segments: *id006
+  path_segments_oriented: *id007
+  service_id: S29
+  vmf_path:
+  - vmf_id: 2_SRC_S29
+    role: SRC
+    node: 2
+    regen: false
+  - vmf_id: 2_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 2
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 3_RELAY_2-3_in
+    role: RELAY_IN
+    node: 3
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 3_SNK_S29
+    role: SNK
+    node: 3
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id008
+  path_segments: *id009
+  path_segments_oriented: *id010
+  service_id: S30
+  vmf_path:
+  - vmf_id: 3_SRC_S30
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S30
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id008
+  path_segments: *id009
+  path_segments_oriented: *id010
+  service_id: S31
+  vmf_path:
+  - vmf_id: 3_SRC_S31
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S31
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id008
+  path_segments: *id009
+  path_segments_oriented: *id010
+  service_id: S32
+  vmf_path:
+  - vmf_id: 3_SRC_S32
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S32
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id008
+  path_segments: *id009
+  path_segments_oriented: *id010
+  service_id: S33
+  vmf_path:
+  - vmf_id: 3_SRC_S33
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S33
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id008
+  path_segments: *id009
+  path_segments_oriented: *id010
+  service_id: S34
+  vmf_path:
+  - vmf_id: 3_SRC_S34
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S34
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id011
+  path_segments: *id012
+  path_segments_oriented: *id013
+  service_id: S35
+  vmf_path:
+  - vmf_id: 3_SRC_S35
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S35
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id011
+  path_segments: *id012
+  path_segments_oriented: *id013
+  service_id: S36
+  vmf_path:
+  - vmf_id: 3_SRC_S36
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S36
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id011
+  path_segments: *id012
+  path_segments_oriented: *id013
+  service_id: S37
+  vmf_path:
+  - vmf_id: 3_SRC_S37
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S37
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id011
+  path_segments: *id012
+  path_segments_oriented: *id013
+  service_id: S38
+  vmf_path:
+  - vmf_id: 3_SRC_S38
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S38
+    role: SNK
+    node: 2
+    regen: false
+- src: 3
+  dst: 2
+  node_path: *id011
+  path_segments: *id012
+  path_segments_oriented: *id013
+  service_id: S39
+  vmf_path:
+  - vmf_id: 3_SRC_S39
+    role: SRC
+    node: 3
+    regen: false
+  - vmf_id: 3_RELAY_2-3_out
+    role: RELAY_OUT
+    node: 3
+    segment: 2-3
+    dir: out
+    regen: false
+  - vmf_id: 2_RELAY_2-3_in
+    role: RELAY_IN
+    node: 2
+    segment: 2-3
+    dir: in
+    regen: false
+  - vmf_id: 2_SNK_S39
+    role: SNK
+    node: 2
+    regen: false
+id_rules:
+  src_fmt: '{node}_SRC_{service}'
+  relay_fmt: '{node}_RELAY_{segment}_{dir}'
+  snk_fmt: '{node}_SNK_{service}'
+fiber_groups:
+- id: fg_1_4
+  node_a: 1
+  node_b: 4
+  relays:
+  - 1_RELAY_1-4_out
+  - 4_RELAY_1-4_in
+  - 4_RELAY_1-4_out
+  - 1_RELAY_1-4_in
+  - 4_RELAY_1-4_out
+  - 1_RELAY_1-4_in
+  - 1_RELAY_1-4_out
+  - 4_RELAY_1-4_in
+  - 4_RELAY_1-4_out
+  - 1_RELAY_1-4_in
+  - 4_RELAY_1-4_out
+  - 1_RELAY_1-4_in
+  - 1_RELAY_1-4_out
+  - 4_RELAY_1-4_in
+  - 4_RELAY_1-4_out
+  - 1_RELAY_1-4_in
+  - 4_RELAY_1-4_out
+  - 1_RELAY_1-4_in
+- id: fg_2_3
+  node_a: 2
+  node_b: 3
+  relays:
+  - 2_RELAY_2-3_out
+  - 3_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 2_RELAY_2-3_out
+  - 3_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 2_RELAY_2-3_out
+  - 3_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 2_RELAY_2-3_out
+  - 3_RELAY_2-3_in
+  - 2_RELAY_2-3_out
+  - 3_RELAY_2-3_in
+  - 2_RELAY_2-3_out
+  - 3_RELAY_2-3_in
+  - 2_RELAY_2-3_out
+  - 3_RELAY_2-3_in
+  - 2_RELAY_2-3_out
+  - 3_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+  - 3_RELAY_2-3_out
+  - 2_RELAY_2-3_in
+- id: fg_1_5
+  node_a: 1
+  node_b: 5
+  relays:
+  - 5_RELAY_1-5_out
+  - 1_RELAY_1-5_in
+  - 5_RELAY_1-5_out
+  - 1_RELAY_1-5_in
+  - 5_RELAY_1-5_out
+  - 1_RELAY_1-5_in
+  - 5_RELAY_1-5_out
+  - 1_RELAY_1-5_in
+  - 5_RELAY_1-5_out
+  - 1_RELAY_1-5_in
+  - 5_RELAY_1-5_out
+  - 1_RELAY_1-5_in
+ow_scheme:
+  H_out: 30

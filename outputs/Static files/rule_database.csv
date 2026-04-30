@@ -1,0 +1,120 @@
+FunctionType,EventName,ActionType,ActionTarget,OutputAlarm
+
+# ========== OTUk layer (Relay) ==========
+OTUk-Relay,Fiber_Crack,Report Locally,OTUk-Relay,OTUk_LOF
+OTUk-Relay,Fiber_Crack,Transmit Upstream,OTUk-Relay,OTUk_BDI
+
+OTUk-Relay,Fiber_Cut,Report Locally,OTUk-Relay,R_LOS
+OTUk-Relay,Fiber_Cut,Transmit Downstream,ODUk-Termination,ODUk_PM_AIS
+OTUk-Relay,Fiber_Cut,Transmit Upstream,OTUk-Relay,OTUk_BDI
+
+OTUk-Relay,Fiber_Aging,Report Locally,OTUk-Relay,OTUk_DEG
+OTUk-Relay,Fiber_Aging,Transmit Upstream,OTUk-Relay,OTUk_BDI
+
+ODUk-Creation,Line_Disconnect,Report Locally,ODUk-Creation,R_LOS
+ODUk-Creation,Line_Disconnect,Transmit Downstream,ODUk-Termination,ODUk_PM_AIS
+ODUk-Creation,Line_Disconnect,Transmit Upstream,ODUk-Creation,OTUk_BDI
+
+ODUk-Creation,XCON_Port_Down,Report Locally,ODUk-Creation,R_LOS
+ODUk-Creation,XCON_Port_Down,Transmit Downstream,ODUk-Termination,ODUk_PM_AIS
+ODUk-Creation,XCON_Port_Down,Transmit Upstream,ODUk-Creation,OTUk_BDI
+
+ODUk-Creation,XCON_Fabric_Fault,Report Locally,ODUk-Creation,OTUk_LOF
+ODUk-Creation,XCON_Fabric_Fault,Transmit Downstream,ODUk-Termination,ODUk_PM_BDI
+ODUk-Creation,XCON_Fabric_Fault,Transmit Upstream,ODUk-Creation,OTUk_BDI
+
+ODUk-Creation,XCON_Buffer_Overflow,Report Locally,ODUk-Creation,OTUk_EXC
+ODUk-Creation,XCON_Buffer_Overflow,Transmit Upstream,ODUk-Creation,OTUk_BDI
+
+# ========== OTUk intrinsic alarms ==========
+OTUk-Relay,OTUk_LOS,Report Locally,OTUk-Relay,OTUk_LOS
+OTUk-Relay,OTUk_LOS,Transmit Downstream,ODUk-Termination,ODUk_PM_AIS
+OTUk-Relay,OTUk_LOS,Transmit Upstream,OTUk-Relay,OTUk_BDI
+
+OTUk-Relay,OTUk_LOF,Report Locally,OTUk-Relay,OTUk_LOF
+OTUk-Relay,OTUk_LOF,Transmit Upstream,OTUk-Relay,OTUk_BDI
+
+OTUk-Relay,OTUk_DEG,Report Locally,OTUk-Relay,OTUk_DEG
+OTUk-Relay,OTUk_EXC,Report Locally,OTUk-Relay,OTUk_EXC
+
+# ========== ODUk Termination ==========
+ODUk-Termination,ODUk_PM_AIS,Report Locally,ODUk-Termination,ODUk_PM_AIS
+ODUk-Termination,ODUk_PM_AIS,Transmit Upstream,ODUk-Creation,ODUk_PM_BDI
+
+ODUk-Termination,ODUk_PM_DEG,Report Locally,ODUk-Termination,ODUk_PM_DEG
+ODUk-Termination,ODUk_PM_DEG,Transmit Upstream,ODUk-Creation,ODUk_PM_BDI
+
+ODUk-Termination,ODUk_PM_EXC,Report Locally,ODUk-Termination,ODUk_PM_EXC
+ODUk-Termination,ODUk_PM_EXC,Transmit Upstream,ODUk-Creation,ODUk_PM_BDI
+
+# Tributary ingress → drop → upstream propagate
+ODUk-Termination,Tributary_Port_Down,Report Locally,ODUk-Termination,ODUk_PM_AIS
+ODUk-Termination,Tributary_Port_Down,Transmit Upstream,ODUk-Creation,ODUk_PM_BDI
+
+# Additional termination reactions
+ODUk-Termination,R_LOS,Report Locally,ODUk-Termination,R_LOS
+ODUk-Termination,R_LOS,Transmit Upstream,ODUk-Creation,ODUk_PM_BDI
+ODUk-Termination,ODUk_PM_AIS,Transmit Downstream,ODUk-Termination,ODUk_PM_AIS
+ODUk-Termination,ODUk_PM_DEG,Transmit Downstream,ODUk-Termination,ODUk_PM_DEG
+ODUk-Termination,ODUk_PM_EXC,Transmit Downstream,ODUk-Termination,ODUk_PM_EXC
+
+# ========== ODUk Creation ==========
+ODUk-Creation,ODUk_PM_BDI,Report Locally,ODUk-Creation,ODUk_PM_BDI
+ODUk-Creation,ODUk_PM_BDI,Transmit Downstream,ODUk-Termination,ODUk_PM_AIS
+ODUk-Creation,ODUk_PM_BDI,Transmit Upstream,OTUk-Relay,OTUk_BDI
+ODUk-Creation,R_LOS,Report Locally,ODUk-Creation,R_LOS
+ODUk-Creation,R_LOS,Transmit Downstream,ODUk-Termination,ODUk_PM_AIS
+ODUk-Creation,R_LOS,Transmit Upstream,OTUk-Relay,OTUk_BDI
+
+# ========== OTUk-RegenIn (section termination, ingress side) ==========
+# OTUk alarms → report locally + generate OTUk_AIS on RegenOut (section ends here, regen restarts)
+OTUk-RegenIn,OTUk_LOS,Report Locally,OTUk-RegenIn,OTUk_LOS
+OTUk-RegenIn,OTUk_LOS,Transmit Downstream RegenOut,OTUk-RegenOut,OTUk_AIS
+OTUk-RegenIn,OTUk_LOF,Report Locally,OTUk-RegenIn,OTUk_LOF
+OTUk-RegenIn,OTUk_LOF,Transmit Downstream RegenOut,OTUk-RegenOut,OTUk_AIS
+OTUk-RegenIn,OTUk_AIS,Report Locally,OTUk-RegenIn,OTUk_AIS
+OTUk-RegenIn,OTUk_AIS,Transmit Downstream RegenOut,OTUk-RegenOut,OTUk_AIS
+OTUk-RegenIn,OTUk_BDI,Report Locally,OTUk-RegenIn,OTUk_BDI
+OTUk-RegenIn,OTUk_DEG,Report Locally,OTUk-RegenIn,OTUk_DEG
+OTUk-RegenIn,OTUk_DEG,Transmit Downstream RegenOut,OTUk-RegenOut,OTUk_AIS
+OTUk-RegenIn,OTUk_EXC,Report Locally,OTUk-RegenIn,OTUk_EXC
+OTUk-RegenIn,OTUk_EXC,Transmit Downstream RegenOut,OTUk-RegenOut,OTUk_AIS
+
+# Fiber events → report locally + generate OTUk_AIS on RegenOut + BDI upstream
+OTUk-RegenIn,Fiber_Cut,Report Locally,OTUk-RegenIn,R_LOS
+OTUk-RegenIn,Fiber_Cut,Transmit Downstream RegenOut,OTUk-RegenOut,OTUk_AIS
+OTUk-RegenIn,Fiber_Cut,Transmit Upstream,OTUk-Relay,OTUk_BDI
+OTUk-RegenIn,Fiber_Crack,Report Locally,OTUk-RegenIn,OTUk_LOF
+OTUk-RegenIn,Fiber_Crack,Transmit Downstream RegenOut,OTUk-RegenOut,OTUk_AIS
+OTUk-RegenIn,Fiber_Crack,Transmit Upstream,OTUk-Relay,OTUk_BDI
+OTUk-RegenIn,Fiber_Aging,Report Locally,OTUk-RegenIn,OTUk_DEG
+OTUk-RegenIn,Fiber_Aging,Transmit Downstream RegenOut,OTUk-RegenOut,OTUk_AIS
+
+# ODUk alarms → pass through to RegenOut transparently
+OTUk-RegenIn,ODUk_PM_AIS,Transmit Downstream RegenOut,OTUk-RegenOut,ODUk_PM_AIS
+OTUk-RegenIn,ODUk_PM_BDI,Transmit Downstream RegenOut,OTUk-RegenOut,ODUk_PM_BDI
+OTUk-RegenIn,ODUk_PM_DEG,Transmit Downstream RegenOut,OTUk-RegenOut,ODUk_PM_DEG
+OTUk-RegenIn,ODUk_PM_EXC,Transmit Downstream RegenOut,OTUk-RegenOut,ODUk_PM_EXC
+
+# ========== OTUk-RegenOut (section creation, egress side) ==========
+# OTUk_AIS from RegenIn → starts new section, transmit downstream as ODUk_PM_AIS
+OTUk-RegenOut,OTUk_AIS,Transmit Downstream,ODUk-Termination,ODUk_PM_AIS
+# ODUk alarms from RegenIn → continue downstream to termination
+OTUk-RegenOut,ODUk_PM_AIS,Transmit Downstream,ODUk-Termination,ODUk_PM_AIS
+OTUk-RegenOut,ODUk_PM_BDI,Transmit Downstream,ODUk-Termination,ODUk_PM_BDI
+OTUk-RegenOut,ODUk_PM_DEG,Transmit Downstream,ODUk-Termination,ODUk_PM_DEG
+OTUk-RegenOut,ODUk_PM_EXC,Transmit Downstream,ODUk-Termination,ODUk_PM_EXC
+# OTUk_BDI from downstream → section boundary, don't cross back
+OTUk-RegenOut,OTUk_BDI,Report Locally,OTUk-RegenOut,OTUk_BDI
+
+# ========== OTUk-Relay → RegenIn forwarding ==========
+OTUk-Relay,Fiber_Cut,Transmit Downstream,OTUk-RegenIn,OTUk_LOS
+OTUk-Relay,OTUk_LOS,Transmit Downstream,OTUk-RegenIn,OTUk_LOS
+OTUk-Relay,OTUk_LOF,Transmit Downstream,OTUk-RegenIn,OTUk_LOF
+OTUk-Relay,Fiber_Cut,Transmit Upstream,OTUk-RegenOut,OTUk_BDI
+OTUk-Relay,OTUk_LOS,Transmit Upstream,OTUk-RegenOut,OTUk_BDI
+
+# ========== Line layer ==========
+Line,OTUk_LOS,Report Locally,Line,OTUk_LOS
+Line,OTUk_LOS,Transmit Downstream,OM,OTUk_LOS
+Line,OTUk_LOS,Transmit Upstream,XCON,OTUk_BDI

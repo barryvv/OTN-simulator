@@ -1,0 +1,23 @@
+# Core simulator
+networkx>=3.0
+pandas>=2.0
+pyyaml>=6.0
+numpy>=1.24
+matplotlib>=3.7
+
+# Testing
+pytest>=7.0
+
+# LLM training and inference (optional — needed for training/inference scripts)
+torch>=2.1
+transformers>=4.40
+peft>=0.10
+trl>=0.8
+datasets>=2.18
+
+# RAG (optional — needed for rag_*.py)
+sentence-transformers>=2.2
+faiss-cpu>=1.7
+
+# ArangoDB (optional — bypass with ARANGO_SKIP=1)
+# python-arango>=7.0

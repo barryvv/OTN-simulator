@@ -1,0 +1,16 @@
+OTU,board faulty:1
+OM_OA,fiber cut:2,3,4
+OD_OTU,fiber cut:1
+OA,board faulty:1,2,3,4
+OA_FIU,fiber cut:2,3,4
+SC2_FIU,fiber cut:2,3
+OTU_OM,fiber cut:2,3
+SC2,board faulty:1,2,3,4
+OM,board faulty:1,2
+OD,board faulty:1,2
+FIU_SC2,fiber cut:2,3
+FIU_FIU,fiber cut:2,3,4
+OD_OM,fiber cut:1,2,3
+FIU_OA,fiber cut:2,3,4,5
+OA_OD,fiber cut:1,2
+FIU,board faulty:1,2,3,4

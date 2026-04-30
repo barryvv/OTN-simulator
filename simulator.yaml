@@ -1,0 +1,119 @@
+time:
+  T_total: 7200
+  step: 1s
+  L_warmup: 60
+ar:
+  alpha_min: 0.8
+  alpha_max: 0.98
+propagation:
+  beta_min: 0.05
+  beta_max: 0.2
+  delay_choices:
+  - 1
+  - 2
+  - 3
+  regen:
+    delay: 1
+    delay_choices:
+    - 1
+    - 2
+    weight: 1.0
+    otuk_reset_mult: 0.1
+    oduk_passthrough_mult: 1.0
+noise:
+  epsilon_sigma: 0.15
+role_priors:
+  SRC:
+    alpha: 0.0
+    beta:
+      tier: 0.95
+    noise:
+      sigma_scale: 1.0
+    anomaly_bias:
+      p_root: 0.45
+  RELAY:
+    alpha: 0.0
+    beta:
+      tier: 0.92
+    noise:
+      sigma_scale: 1.0
+    anomaly_bias:
+      p_root: 0.35
+  SNK:
+    alpha: 0.0
+    beta:
+      tier: 0.9
+    noise:
+      sigma_scale: 0.8
+    anomaly_bias:
+      p_root: 0.2
+metrics:
+  out_channels:
+  - BBE
+  - BBER
+  - ES
+anomaly:
+  rate_per_mw: 0.35
+  amp_range:
+  - 2.0
+  - 4.0
+  width_steps:
+  - 5
+  - 60
+  type_choices:
+  - spike
+  - shift
+  - burst
+  burst:
+    mode_choices:
+    - multi_pulse
+    - damped_ring
+    - exp_decay
+  shift_ratio_max: 0.2
+  min_gap_steps_per_vmf: 2
+  max_concurrent_roots_per_fiber: 1
+  window_overlap_limit: 2
+  target_roots_per_mw:
+  - 100
+  - 150
+cascade:
+  enabled: false
+  max_depth: 2
+  interference_window_sec: 5.0
+  rules:
+  - primary: Fiber_Cut
+    primary_kind: [OA, OD, OM, FIU]
+    secondary: XCON_Port_Down
+    secondary_kind: [XCON]
+    relationship: downstream
+    probability: 0.6
+    delay_sec: [5, 30]
+    condition: same_service
+  - primary: Fiber_Cut
+    primary_kind: [OA, OD, OM, FIU]
+    secondary: Line_Disconnect
+    secondary_kind: [LINE]
+    relationship: downstream
+    probability: 0.45
+    delay_sec: [3, 20]
+  - primary: XCON_Fabric_Fault
+    primary_kind: [XCON]
+    secondary: XCON_Buffer_Overflow
+    secondary_kind: [XCON]
+    relationship: same_node
+    probability: 0.35
+    delay_sec: [2, 10]
+  - primary: Fiber_Crack
+    primary_kind: [OA, OD, OM, FIU]
+    secondary: Fiber_Cut
+    secondary_kind: [OA, OD, OM, FIU]
+    relationship: same_board
+    probability: 0.25
+    delay_sec: [30, 120]
+  - primary: XCON_Port_Down
+    primary_kind: [XCON]
+    secondary: XCON_Fabric_Fault
+    secondary_kind: [XCON]
+    relationship: adjacent_node
+    probability: 0.10
+    delay_sec: [10, 60]

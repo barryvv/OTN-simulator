@@ -1,0 +1,4 @@
+FromType,FromAlarm,ToType,ToAlarm,EdgeType,DelayMs,Severity
+Line,Line_Disconnect,XCON,ODUk_PM_DEG,XCON_Line,500,Major
+XCON,ODUk_PM_DEG,Tributary,ODUk_PM_DEG,Tributary_XCON,300,Minor
+Line,Line_Disconnect,OM,OTUk_LOS,Line_OM,700,Critical
