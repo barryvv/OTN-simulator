@@ -141,7 +141,7 @@ describing the injected failure(s).
 
 ### 9.1) DSFC-driven Dataset A (regional failures, k ∈ {1,2,3,5,8,10})
 
-Uses an externally supplied DSFC (Deterministic Service Function Chain)
+Uses an externally supplied DSFC (Diagnostic Service Function Chain)
 cover file. Each line in the file is one lightpath as a comma-separated
 list of board names (e.g. `ROADM0-Tributary1,ROADM0-XCON1,...`).
 
