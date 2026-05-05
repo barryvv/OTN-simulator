@@ -149,13 +149,13 @@ def generate_train_from_dsfc(
         extract_edges_csv,
         extract_lightpaths_json,
         extract_services_json,
-        generate_single_ow,
         event_for_board,
         StreamingDatasetWriter,
         load_default_sim_cfg,
         default_alarm_rules_path,
     )
     from otn_simulator import safe_mkdir
+    from generate_from_dsfc import generate_single_ow_lightpath_aware
 
     rng = np.random.default_rng(seed)
     sim_cfg = load_default_sim_cfg()
@@ -208,12 +208,20 @@ def generate_train_from_dsfc(
         services = extract_services_json(topo)
 
         board_map = topo.get("board_map", {})
-        all_boards = sorted(board_DG.nodes())
+
+        # Option 2: restrict failures to boards that appear on at least one
+        # lightpath. Boards off any service path produce no metrics/alarms.
+        lightpath_boards = set()
+        for lp in dsfc_lightpaths:
+            lightpath_boards.update(lp)
+        all_boards = sorted(b for b in board_DG.nodes() if b in lightpath_boards)
         if pilot:
             all_boards = all_boards[:20]
 
-        print(f"  {len(all_boards)} boards, {len(dsfc_lightpaths)} lightpaths, "
-              f"{len(services)} services")
+        skipped = len(board_DG.nodes()) - len(all_boards)
+        print(f"  {len(all_boards)} boards on lightpaths "
+              f"(skipping {skipped} boards not on any service path)")
+        print(f"  {len(dsfc_lightpaths)} lightpaths, {len(services)} services")
         print(f"  generating 1 OW per board ...")
 
         writer = StreamingDatasetWriter(
@@ -229,7 +237,7 @@ def generate_train_from_dsfc(
                 "duration_ms": int(rng.integers(5000, 20001)),
             }
             try:
-                metrics_df, alarms, label = generate_single_ow(
+                metrics_df, alarms, label = generate_single_ow_lightpath_aware(
                     ow_id=ow_id,
                     domain_id=d,
                     topo=topo,
@@ -237,6 +245,8 @@ def generate_train_from_dsfc(
                     sim_cfg=sim_cfg,
                     failure_spec=failure_spec,
                     rng=rng,
+                    services=topo.get("services", []),
+                    lightpaths=dsfc_lightpaths,
                     ow_length=ow_length,
                     alarm_rules_path=alarm_rules,
                 )
