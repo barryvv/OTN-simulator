@@ -135,11 +135,20 @@ def main() -> None:
     lora_cfg = LoraConfig(
         r=args.lora_r,
         lora_alpha=args.lora_alpha,
-        lora_dropout=0.05,
+        # dropout=0 lets us safely switch to train() mode for the
+        # new-log-probs forward pass so gradient checkpointing actually
+        # activates, without re-introducing the eval-vs-train ratio noise.
+        lora_dropout=0.0,
         target_modules=["q_proj", "k_proj", "v_proj", "o_proj"],
         task_type="CAUSAL_LM",
     )
     policy = get_peft_model(base, lora_cfg)
+    # Cast trainable (LoRA) params to fp32 so AdamW's exp_avg / exp_avg_sq
+    # have enough precision to accumulate the small per-step updates. The
+    # frozen base stays in bf16 for memory.
+    for p in policy.parameters():
+        if p.requires_grad:
+            p.data = p.data.float()
     policy.print_trainable_parameters()
 
     # ── Reference model (only needed if beta > 0) ──

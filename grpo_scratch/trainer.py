@@ -188,13 +188,17 @@ class FromScratchGRPOTrainer:
             self._maybe_empty_cache()
 
         # ─── Phase 5: NEW LOG-PROBS + LOSS ─────────────────────
-        # Stay in eval mode so dropout is consistent with phase 3 (old) and
-        # phase 4 (ref). Gradient flow does not depend on train/eval mode —
-        # only dropout/batchnorm do, and we want them off so the importance
-        # ratio reflects actual policy change, not stochastic noise.
+        # Switch to train() so that gradient checkpointing actually
+        # activates (HF transformers guards it with `self.training`). This
+        # is only safe when lora_dropout=0, which the entrypoint enforces;
+        # otherwise old vs new log-probs would diverge purely from dropout
+        # noise. With dropout off, train/eval are mathematically identical
+        # and the importance ratio still reflects only real policy change.
+        self.policy.train()
         log_probs_new, _ = compute_log_probs(
             self.policy, input_ids, attention_mask, completion_mask,
         )
+        self.policy.eval()
 
         loss, metrics = grpo_loss(
             log_probs_new=log_probs_new,
