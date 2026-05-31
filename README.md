@@ -43,6 +43,14 @@ This repository contains **two** GRPO trainers for the OTN RCA task:
      --max-steps 50
    ```
 
+   **Run on Google Colab (no local GPU needed):**
+
+   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/barryvv/OTN-simulator/blob/main/train_grpo_scratch_colab.ipynb)
+
+   The notebook `train_grpo_scratch_colab.ipynb` clones this repo, installs
+   the deps, runs the unit tests, uploads your `train.jsonl`, and trains
+   Qwen 2.5-3B on a free T4 (16 GB) with bf16 + LoRA + gradient checkpointing.
+
 The two trainers reuse the same `otn_alarm_reward` and `otn_format_reward`
 functions, so smoke runs (G=4, 10 steps, 3-scenario subset) produce
 comparable metrics — this validates the from-scratch implementation
