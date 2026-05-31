@@ -3,6 +3,51 @@
 This repository simulates topology, failures, timeseries metrics (BBE/BBER/ES), and alarm propagation.  
 Below is a start-to-end workflow that matches the current scripts and file layout.
 
+## GRPO Implementation
+
+This repository contains **two** GRPO trainers for the OTN RCA task:
+
+1. **`train_grpo_gemma3b.py`** — Production trainer using Hugging Face TRL's
+   `GRPOTrainer`. This is what is used for actual model training because TRL's
+   implementation is battle-tested and well-optimized.
+
+2. **`train_grpo_scratch.py` + `grpo_scratch/`** — From-scratch implementation
+   of the GRPO algorithm in raw PyTorch. The `grpo_scratch/` module implements
+   the policy update loop, log-prob computation, group-relative advantage
+   estimation, and clipped surrogate loss **without using `trl.GRPOTrainer`**.
+   See `tests/test_grpo_scratch.py` for unit tests of the core math.
+
+   Module layout:
+   ```
+   grpo_scratch/
+   ├── sampling.py     # group sampling (G completions per prompt)
+   ├── log_probs.py    # per-token log-prob computation with masking
+   ├── advantages.py   # group-relative advantage standardization
+   ├── losses.py       # clipped surrogate loss + optional KL penalty
+   ├── rewards.py      # OTN-specific reward functions
+   └── trainer.py      # training loop, phase-by-phase
+   ```
+
+   Run the math tests:
+   ```bash
+   python -m pytest tests/test_grpo_scratch.py -v
+   ```
+
+   Launch a from-scratch training run (same dataset and rewards as the TRL
+   trainer):
+   ```bash
+   python train_grpo_scratch.py \
+     --base-model Qwen/Qwen2.5-3B-Instruct \
+     --train-file outputs/grpo_data/train.jsonl \
+     --output-dir adapters/qwen-3b-grpo-scratch \
+     --max-steps 50
+   ```
+
+The two trainers reuse the same `otn_alarm_reward` and `otn_format_reward`
+functions, so smoke runs (G=4, 10 steps, 3-scenario subset) produce
+comparable metrics — this validates the from-scratch implementation
+against the TRL reference.
+
 ## 0) Prereqs
 - Python 3.9+ recommended
 - Packages used by the scripts: `networkx`, `pandas`, `pyyaml`, `matplotlib`
