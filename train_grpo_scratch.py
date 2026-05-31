@@ -32,7 +32,6 @@ from peft import LoraConfig, get_peft_model
 from torch.utils.data import DataLoader
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from grpo_scratch.rewards import otn_alarm_reward, otn_format_reward
 from grpo_scratch.trainer import FromScratchGRPOTrainer, GRPOScratchConfig
 
 
@@ -108,6 +107,11 @@ def main() -> None:
     ap.add_argument("--max-grad-norm", type=float, default=1.0,
                     help="Gradient norm clip. Default 1.0 is conservative; for RL "
                          "with high raw grad norms, 5-10 often learns faster.")
+    ap.add_argument("--reward-fn", default="discrete",
+                    choices=["discrete", "continuous"],
+                    help="discrete: original tiered rewards (TRL-compatible). "
+                         "continuous: difflib similarity slopes that GRPO can "
+                         "climb when the discrete tiers cause plateau collapse.")
     args = ap.parse_args()
 
     device = pick_device(args.device)
@@ -160,6 +164,16 @@ def main() -> None:
         ref = AutoModelForCausalLM.from_pretrained(
             args.base_model, torch_dtype=dtype,
         ).to(device).eval()
+
+    # ── Reward functions (discrete tiered vs continuous similarity) ──
+    if args.reward_fn == "continuous":
+        from grpo_scratch.rewards_continuous import (
+            otn_alarm_reward, otn_format_reward,
+        )
+        print("[info] using continuous (similarity-based) reward functions")
+    else:
+        from grpo_scratch.rewards import otn_alarm_reward, otn_format_reward
+        print("[info] using discrete (tiered) reward functions")
 
     # ── Dataset ──
     ds = load_dataset(
