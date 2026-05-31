@@ -188,7 +188,10 @@ class FromScratchGRPOTrainer:
             self._maybe_empty_cache()
 
         # ─── Phase 5: NEW LOG-PROBS + LOSS ─────────────────────
-        self.policy.train()
+        # Stay in eval mode so dropout is consistent with phase 3 (old) and
+        # phase 4 (ref). Gradient flow does not depend on train/eval mode —
+        # only dropout/batchnorm do, and we want them off so the importance
+        # ratio reflects actual policy change, not stochastic noise.
         log_probs_new, _ = compute_log_probs(
             self.policy, input_ids, attention_mask, completion_mask,
         )
