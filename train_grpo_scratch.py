@@ -105,6 +105,9 @@ def main() -> None:
                     help="Trade compute for memory (recommended for MPS / small VRAM)")
     ap.add_argument("--empty-cache-between-phases", action="store_true",
                     help="Call torch.{cuda,mps}.empty_cache() between phases")
+    ap.add_argument("--max-grad-norm", type=float, default=1.0,
+                    help="Gradient norm clip. Default 1.0 is conservative; for RL "
+                         "with high raw grad norms, 5-10 often learns faster.")
     args = ap.parse_args()
 
     device = pick_device(args.device)
@@ -170,6 +173,7 @@ def main() -> None:
         reward_weights=(0.8, 0.2),
         gradient_checkpointing=args.gradient_checkpointing,
         empty_cache_between_phases=args.empty_cache_between_phases,
+        max_grad_norm=args.max_grad_norm,
     )
     trainer = FromScratchGRPOTrainer(
         policy_model=policy,
