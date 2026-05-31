@@ -143,12 +143,14 @@ def main() -> None:
         task_type="CAUSAL_LM",
     )
     policy = get_peft_model(base, lora_cfg)
-    # Cast trainable (LoRA) params to fp32 so AdamW's exp_avg / exp_avg_sq
-    # have enough precision to accumulate the small per-step updates. The
-    # frozen base stays in bf16 for memory.
-    for p in policy.parameters():
-        if p.requires_grad:
-            p.data = p.data.float()
+    # NOTE: we leave LoRA params in the base dtype (bf16) on purpose. An
+    # earlier version cast them to fp32 for AdamW precision, but at LoRA
+    # gradient magnitudes around 5e-4 bf16 has ~0.8% relative precision —
+    # plenty — and the fp32 cast forced a fp32 LoRA-output copy at every
+    # q/k/v/o module which added ~14 GB of activation memory across all
+    # layers and tripped OOM on the A100/H100. AdamW in bf16 trains fine
+    # here; the slow B-matrix growth seen previously was the LR being
+    # too conservative, not the dtype.
     policy.print_trainable_parameters()
 
     # ── Reference model (only needed if beta > 0) ──
