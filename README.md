@@ -1,60 +1,11 @@
 # OTN Simulator (End-to-End Guide)
 
-This repository simulates topology, failures, timeseries metrics (BBE/BBER/ES), and alarm propagation.  
+This repository simulates topology, failures, timeseries metrics (BBE/BBER/ES), and alarm propagation,
+and fine-tunes LLMs to predict alarm root causes from the resulting data.  
 Below is a start-to-end workflow that matches the current scripts and file layout.
-
-## GRPO Implementation
-
-This repository contains **two** GRPO trainers for the OTN RCA task:
-
-1. **`train_grpo_gemma3b.py`** — Production trainer using Hugging Face TRL's
-   `GRPOTrainer`. This is what is used for actual model training because TRL's
-   implementation is battle-tested and well-optimized.
-
-2. **`train_grpo_scratch.py` + `grpo_scratch/`** — From-scratch implementation
-   of the GRPO algorithm in raw PyTorch. The `grpo_scratch/` module implements
-   the policy update loop, log-prob computation, group-relative advantage
-   estimation, and clipped surrogate loss **without using `trl.GRPOTrainer`**.
-   See `tests/test_grpo_scratch.py` for unit tests of the core math.
-
-   Module layout:
-   ```
-   grpo_scratch/
-   ├── sampling.py     # group sampling (G completions per prompt)
-   ├── log_probs.py    # per-token log-prob computation with masking
-   ├── advantages.py   # group-relative advantage standardization
-   ├── losses.py       # clipped surrogate loss + optional KL penalty
-   ├── rewards.py      # OTN-specific reward functions
-   └── trainer.py      # training loop, phase-by-phase
-   ```
-
-   Run the math tests:
-   ```bash
-   python -m pytest tests/test_grpo_scratch.py -v
-   ```
-
-   Launch a from-scratch training run (same dataset and rewards as the TRL
-   trainer):
-   ```bash
-   python train_grpo_scratch.py \
-     --base-model Qwen/Qwen2.5-3B-Instruct \
-     --train-file outputs/grpo_data/train.jsonl \
-     --output-dir adapters/qwen-3b-grpo-scratch \
-     --max-steps 50
-   ```
-
-   **Run on Google Colab (no local GPU needed):**
-
-   [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/barryvv/OTN-simulator/blob/main/train_grpo_scratch_colab.ipynb)
-
-   The notebook `train_grpo_scratch_colab.ipynb` clones this repo, installs
-   the deps, runs the unit tests, uploads your `train.jsonl`, and trains
-   Qwen 2.5-3B on a free T4 (16 GB) with bf16 + LoRA + gradient checkpointing.
-
-The two trainers reuse the same `otn_alarm_reward` and `otn_format_reward`
-functions, so smoke runs (G=4, 10 steps, 3-scenario subset) produce
-comparable metrics — this validates the from-scratch implementation
-against the TRL reference.
+The simulator/data pipeline comes first (sections 0–9); all LLM **post-training**
+(SFT, GRPO, and the from-scratch GRPO implementation) lives in the
+[Post-Training](#post-training-llm-fine-tuning) section at the end.
 
 ## 0) Prereqs
 - Python 3.9+ recommended
@@ -305,3 +256,137 @@ attributes back to a root in `failed_boards` (no Many-to-One attribution).
 - Use `ARANGO_SKIP=1` to avoid ArangoDB.
 - Use `REGEN_HOPS` to control regen insertion frequency (0 = no regen).
 - Use `ELECTRICAL_GROUPS=N` (or `--eg N`) to control electrical-layer chain count per ROADM (more → larger boards-per-domain).
+
+---
+
+# Post-Training (LLM Fine-Tuning)
+
+Once the simulator has produced alarm/metric data, the second half of the
+project fine-tunes LLMs (Qwen 2.5) to predict alarm root causes from the
+metrics alone. Everything related to post-training — dataset construction,
+SFT, GRPO, and inference — is collected here.
+
+ML dependencies (on top of the simulator deps): `torch`, `transformers`,
+`peft`, `trl`, `datasets`, `accelerate`.
+
+## P1) Build training data
+
+```bash
+# SFT: prompt + ground-truth completion pairs
+python3 generate_sft_data.py \
+  --rules outputs/Static\ files/rule_database.csv \
+  --run-dirs outputs/alarm_flows/test_runs/noregen outputs/alarm_flows/test_runs/regen \
+  --out outputs/llm_data/train.jsonl
+
+# GRPO: prompt + structured ground-truth fields (boards/alarms/severity/...)
+python3 generate_grpo_data.py --out outputs/grpo_data/train.jsonl
+```
+
+The GRPO JSONL carries the ground-truth fields the reward functions score
+against (`ground_truth_boards`, `ground_truth_alarms`,
+`ground_truth_root_board`, `ground_truth_root_event`,
+`ground_truth_row_count`, `ground_truth_severity_dist`, ...).
+
+## P2) Supervised fine-tuning (SFT)
+
+Standard LoRA SFT to teach the base model the output format and basic
+mapping before any RL.
+
+```bash
+python3 train_sft_qwen7b.py \
+  --base-model Qwen/Qwen2.5-7B-Instruct \
+  --train-file outputs/llm_data/train.jsonl \
+  --output-dir adapters/qwen-7b-failure
+```
+
+`train_agent_sft.py` is a variant that trains on agent/tool-use traces.
+
+## P3) GRPO — TRL (production)
+
+Reinforcement fine-tuning with Hugging Face TRL's `GRPOTrainer`. This is
+the battle-tested path used for actual training. Rewards compare predicted
+boards/alarms/severity distributions against ground truth
+(`board_reward_func`, `alarm_reward_func`, `severity_reward_func`,
+`format_reward_func`).
+
+```bash
+python3 train_grpo_gemma3b.py \
+  --base-model Qwen/Qwen2.5-3B-Instruct \
+  --train-file outputs/grpo_data/train.jsonl \
+  --output-dir adapters/qwen-3b-grpo
+```
+
+## P4) Inference
+
+```bash
+# GRPO adapter, compared against the base model
+python3 inference_grpo.py \
+  --base-model Qwen/Qwen2.5-3B-Instruct \
+  --adapter adapters/qwen-3b-grpo \
+  --prompt-file outputs/grpo_data/train.jsonl \
+  --sample-index 0 --compare-base
+
+# SFT adapter / generic Qwen inference
+python3 inference_qwen.py --adapter adapters/qwen-7b-failure ...
+
+# Batched inference over a dataset
+python3 batch_inference.py ...
+```
+
+## P5) GRPO from scratch (raw PyTorch)
+
+`train_grpo_scratch.py` + the `grpo_scratch/` package implement the GRPO
+algorithm in raw PyTorch — the policy update loop, log-prob computation,
+group-relative advantage estimation, and clipped surrogate loss — **without
+using `trl.GRPOTrainer`**. It reuses the same dataset and OTN reward
+functions as the TRL trainer, so the two can be compared directly. This is
+the educational / first-principles counterpart to P3.
+
+Module layout:
+```
+grpo_scratch/
+├── sampling.py            # group sampling (G completions per prompt)
+├── log_probs.py           # per-token log-prob computation with masking
+├── advantages.py          # group-relative advantage baseline (GRPO / Dr. GRPO)
+├── losses.py              # token-level clipped surrogate loss + optional KL
+├── rewards.py             # OTN reward functions (discrete tiers)
+├── rewards_continuous.py  # continuous similarity-based reward variant
+└── trainer.py             # training loop, phase-by-phase
+```
+
+Run the math tests (group-relative advantages, token-level clipped
+surrogate, KL toggle, log-prob shift+mask):
+```bash
+python -m pytest tests/test_grpo_scratch.py -v
+```
+
+Launch a training run:
+```bash
+python train_grpo_scratch.py \
+  --base-model Qwen/Qwen2.5-3B-Instruct \
+  --train-file outputs/grpo_data/train.jsonl \
+  --output-dir adapters/qwen-3b-grpo-scratch \
+  --group-size 8 --max-steps 300 \
+  --lr 1e-4 --lr-scheduler cosine --warmup-steps 10 \
+  --reward-fn continuous
+```
+
+Key knobs that make it actually learn on a flat reward landscape:
+- **`--scale-rewards`** *(off by default)* — when off, advantages use the
+  Dr. GRPO mean-only baseline instead of dividing by the within-group std.
+  Std-scaling a near-flat reward amplifies rounding noise into
+  unit-magnitude advantages; the mean-only baseline avoids it.
+- **`--reward-fn continuous`** — smooth similarity slopes instead of
+  discrete tiers, so group-relative advantages don't collapse to zero.
+- token-level per-token-mean clipped surrogate (built in) removes the
+  length bias of summed-sequence log-probs.
+
+**Run on Google Colab (no local GPU needed):**
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/barryvv/OTN-simulator/blob/main/train_grpo_scratch_colab.ipynb)
+
+The notebook `train_grpo_scratch_colab.ipynb` clones this repo, installs the
+deps, runs the unit tests, uploads your `train.jsonl`, and trains Qwen 2.5-3B
+with bf16 + LoRA. Watch `reward_mean` drift upward over the run; `loss≈0`
+every step is expected for on-policy single-update GRPO (the gradient, not
+the loss value, drives the update).
