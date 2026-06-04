@@ -31,9 +31,18 @@ class GRPOScratchConfig:
     max_new_tokens: int = 1024
     temperature: float = 0.7
     learning_rate: float = 5e-6
+    # LR schedule. "constant" reproduces the old flat-LR behavior; "cosine"
+    # / "linear" warm up over `warmup_steps` then decay to 0 across the run.
+    lr_scheduler_type: str = "constant"
+    warmup_steps: int = 0
     epsilon: float = 0.2
     beta: float = 0.0
     max_grad_norm: float = 1.0
+    # Advantage normalization. True = original GRPO (divide by within-group
+    # std). False = Dr. GRPO (mean baseline only) — far more robust when the
+    # reward landscape is flat, because it stops tiny std values from
+    # amplifying rounding noise into unit-magnitude advantages.
+    scale_rewards: bool = False
     log_every: int = 1
     save_every: int = 50
     output_dir: str = "adapters/grpo_scratch"
@@ -77,6 +86,8 @@ class FromScratchGRPOTrainer:
             (p for p in self.policy.parameters() if p.requires_grad),
             lr=self.config.learning_rate,
         )
+        # Scheduler is built lazily in train() once the step count is known.
+        self.scheduler = None
 
         if self.ref is not None:
             self.ref.eval()
@@ -166,23 +177,29 @@ class FromScratchGRPOTrainer:
         # ─── Phase 2: REWARDS + ADVANTAGES ─────────────────────
         gt_kwargs = self._expand_ground_truth(batch, G)
         rewards = self.compute_rewards(all_completions_text, gt_kwargs)
-        advantages = group_relative_advantages(rewards, G).detach()
+        advantages = group_relative_advantages(
+            rewards, G, scale_by_std=self.config.scale_rewards,
+        ).detach()
+
+        # Completion mask aligned with the per-token log-probs (which are
+        # shifted left by one, so we drop the first mask column to match).
+        token_mask = completion_mask[:, 1:]
 
         # ─── Phase 3: OLD LOG-PROBS ────────────────────────────
         # The "old" policy is the policy at sampling time. Since we just
         # sampled and haven't updated, the current policy IS pi_old. We
-        # snapshot its log-probs and detach.
+        # snapshot its per-token log-probs and detach.
         with torch.no_grad():
-            log_probs_old, _ = compute_log_probs(
+            _, tok_old = compute_log_probs(
                 self.policy, input_ids, attention_mask, completion_mask,
             )
         self._maybe_empty_cache()
 
         # ─── Phase 4: REF LOG-PROBS (optional) ─────────────────
-        log_probs_ref = None
+        tok_ref = None
         if self.config.beta > 0.0 and self.ref is not None:
             with torch.no_grad():
-                log_probs_ref, _ = compute_log_probs(
+                _, tok_ref = compute_log_probs(
                     self.ref, input_ids, attention_mask, completion_mask,
                 )
             self._maybe_empty_cache()
@@ -195,18 +212,21 @@ class FromScratchGRPOTrainer:
         # noise. With dropout off, train/eval are mathematically identical
         # and the importance ratio still reflects only real policy change.
         self.policy.train()
-        log_probs_new, _ = compute_log_probs(
+        _, tok_new = compute_log_probs(
             self.policy, input_ids, attention_mask, completion_mask,
         )
         self.policy.eval()
 
+        # Token-level clipped surrogate (per-token mean) removes the length
+        # bias that summed-sequence log-probs introduce.
         loss, metrics = grpo_loss(
-            log_probs_new=log_probs_new,
-            log_probs_old=log_probs_old.detach(),
+            log_probs_new=tok_new,
+            log_probs_old=tok_old.detach(),
             advantages=advantages,
-            log_probs_ref=log_probs_ref.detach() if log_probs_ref is not None else None,
+            log_probs_ref=tok_ref.detach() if tok_ref is not None else None,
             epsilon=self.config.epsilon,
             beta=self.config.beta,
+            completion_mask=token_mask,
         )
 
         # ─── Phase 6: BACKWARD + STEP ──────────────────────────
@@ -216,12 +236,15 @@ class FromScratchGRPOTrainer:
             max_norm=self.config.max_grad_norm,
         )
         self.optimizer.step()
+        if self.scheduler is not None:
+            self.scheduler.step()
         self.optimizer.zero_grad(set_to_none=True)
         self._maybe_empty_cache()
 
         metrics["reward_mean"] = rewards.mean().item()
         metrics["reward_std"] = rewards.std().item() if rewards.numel() > 1 else 0.0
         metrics["grad_norm"] = float(grad_norm)
+        metrics["lr"] = self.optimizer.param_groups[0]["lr"]
         return loss.item(), metrics
 
     def _maybe_empty_cache(self) -> None:
@@ -248,24 +271,58 @@ class FromScratchGRPOTrainer:
     # Training loop
     # ─────────────────────────────────────────────────────────
     def train(self, dataloader: Iterable[dict], num_steps: int) -> None:
-        for step, batch in enumerate(dataloader):
-            if step >= num_steps:
-                break
-            loss, metrics = self.train_step(batch)
-            if step % self.config.log_every == 0:
-                print(
-                    f"step {step}: loss={loss:.4f}  "
-                    f"reward_mean={metrics['reward_mean']:.4f}  "
-                    f"reward_std={metrics['reward_std']:.4f}  "
-                    f"frac_clipped={metrics['fraction_clipped']:.3f}  "
-                    f"mean_ratio={metrics['mean_ratio']:.3f}  "
-                    f"kl={metrics['kl']:.4f}  "
-                    f"grad_norm={metrics['grad_norm']:.3f}",
-                    flush=True,
-                )
-            if step > 0 and step % self.config.save_every == 0:
-                self.save(Path(self.config.output_dir) / f"step-{step}")
+        self._build_scheduler(num_steps)
+        step = 0
+        epoch = 0
+        # Cycle the dataloader so num_steps can exceed the dataset size:
+        # with 147 prompts and batch_size=1, a single pass is only 147
+        # steps, so anything larger needs multiple epochs.
+        while step < num_steps:
+            epoch += 1
+            for batch in dataloader:
+                if step >= num_steps:
+                    break
+                loss, metrics = self.train_step(batch)
+                self._log_and_save(step, loss, metrics)
+                step += 1
         self.save(Path(self.config.output_dir) / "final")
+
+    def _log_and_save(self, step: int, loss: float, metrics: dict) -> None:
+        if step % self.config.log_every == 0:
+            print(
+                f"step {step}: loss={loss:.4f}  "
+                f"reward_mean={metrics['reward_mean']:.4f}  "
+                f"reward_std={metrics['reward_std']:.4f}  "
+                f"adv_abs={metrics['adv_abs_mean']:.4f}  "
+                f"frac_clipped={metrics['fraction_clipped']:.3f}  "
+                f"mean_ratio={metrics['mean_ratio']:.3f}  "
+                f"kl={metrics['kl']:.4f}  "
+                f"grad_norm={metrics['grad_norm']:.3f}  "
+                f"lr={metrics['lr']:.2e}",
+                flush=True,
+            )
+        if step > 0 and step % self.config.save_every == 0:
+            self.save(Path(self.config.output_dir) / f"step-{step}")
+
+    def _build_scheduler(self, num_steps: int) -> None:
+        """Construct the LR scheduler now that the total step count is known.
+
+        "constant" leaves the optimizer LR flat (old behavior). "cosine" and
+        "linear" warm up linearly over `warmup_steps` then decay to 0 across
+        the remaining steps. transformers.get_scheduler is used so the warmup
+        + decay curve matches the TRL trainer for apples-to-apples runs."""
+        sched_type = self.config.lr_scheduler_type
+        if sched_type == "constant" and self.config.warmup_steps == 0:
+            self.scheduler = None
+            return
+        from transformers import get_scheduler
+
+        self.scheduler = get_scheduler(
+            name=sched_type,
+            optimizer=self.optimizer,
+            num_warmup_steps=self.config.warmup_steps,
+            num_training_steps=num_steps,
+        )
 
     def save(self, path: Path) -> None:
         path.mkdir(parents=True, exist_ok=True)

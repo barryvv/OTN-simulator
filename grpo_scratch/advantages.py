@@ -14,8 +14,10 @@ def group_relative_advantages(
     rewards: torch.Tensor,
     group_size: int,
     eps: float = 1e-8,
+    scale_by_std: bool = True,
+    min_std: float = 1e-4,
 ) -> torch.Tensor:
-    """Standardize rewards within each group.
+    """Group-relative advantage baseline for GRPO.
 
     Args:
         rewards: [B] flat tensor where B = num_prompts * group_size.
@@ -24,9 +26,24 @@ def group_relative_advantages(
                  prompt 1, etc.
         group_size: int G
         eps: numerical stabilizer added to the std before division.
+        scale_by_std: if True (default, original GRPO), divide the centered
+            reward by the within-group std so advantages are standardized to
+            unit variance. If False (Dr. GRPO, Liu et al. 2025), use only the
+            mean baseline: advantage = reward - group_mean.
+
+            WHY THIS MATTERS: when a group's completions score almost
+            identically (std ~ 1e-3), dividing by that tiny std blows a
+            rounding-noise reward gap up to ±1.0 advantages — the optimizer
+            then chases pure noise. Removing std scaling makes the advantage
+            magnitude proportional to the *real* reward spread, so degenerate
+            groups contribute ~0 signal instead of amplified noise.
+        min_std: when scale_by_std is True, groups whose std falls below this
+            floor are treated as degenerate and their advantages are zeroed
+            (rather than divided by ~eps and exploded). No effect when
+            scale_by_std is False.
 
     Returns:
-        advantages: [B] standardized within group.
+        advantages: [B].
     """
     B = rewards.size(0)
     if B % group_size != 0:
@@ -38,7 +55,17 @@ def group_relative_advantages(
     grouped = rewards.view(num_prompts, group_size)
 
     mean = grouped.mean(dim=1, keepdim=True)                       # [N, 1]
-    std = grouped.std(dim=1, keepdim=True, unbiased=False) + eps   # match TRL
+    centered = grouped - mean                                       # [N, G]
 
-    advantages = (grouped - mean) / std                            # [N, G]
-    return advantages.view(-1)                                     # [B]
+    if not scale_by_std:
+        # Dr. GRPO: mean baseline only. Degenerate groups self-zero because
+        # `centered` is ~0 when all rewards in the group are equal.
+        return centered.reshape(-1)
+
+    std = grouped.std(dim=1, keepdim=True, unbiased=False)         # [N, 1]
+    advantages = centered / (std + eps)                            # [N, G]
+    # Kill noise amplification: a group with no real reward spread carries no
+    # learnable signal, so zero it instead of dividing by ~eps.
+    degenerate = (std < min_std)                                   # [N, 1]
+    advantages = torch.where(degenerate, torch.zeros_like(advantages), advantages)
+    return advantages.reshape(-1)                                  # [B]

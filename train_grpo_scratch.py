@@ -91,6 +91,13 @@ def main() -> None:
     ap.add_argument("--max-steps", type=int, default=50)
     ap.add_argument("--temperature", type=float, default=0.7)
     ap.add_argument("--lr", type=float, default=5e-6)
+    ap.add_argument("--lr-scheduler", default="cosine",
+                    choices=["constant", "cosine", "linear",
+                             "constant_with_warmup"],
+                    help="LR schedule. cosine/linear warm up then decay to 0; "
+                         "constant reproduces the old flat-LR behavior.")
+    ap.add_argument("--warmup-steps", type=int, default=5,
+                    help="Linear warmup steps before the schedule decays.")
     ap.add_argument("--epsilon", type=float, default=0.2)
     ap.add_argument("--beta", type=float, default=0.0,
                     help="KL penalty coefficient (0.0 = no KL, following DAPO)")
@@ -112,6 +119,12 @@ def main() -> None:
                     help="discrete: original tiered rewards (TRL-compatible). "
                          "continuous: difflib similarity slopes that GRPO can "
                          "climb when the discrete tiers cause plateau collapse.")
+    ap.add_argument("--scale-rewards", action="store_true",
+                    help="Original GRPO: divide group-centered rewards by the "
+                         "within-group std. Default OFF (Dr. GRPO mean-only "
+                         "baseline), which avoids amplifying rounding noise "
+                         "into unit-magnitude advantages when the reward "
+                         "landscape is flat.")
     args = ap.parse_args()
 
     device = pick_device(args.device)
@@ -192,6 +205,8 @@ def main() -> None:
         max_new_tokens=args.max_new_tokens,
         temperature=args.temperature,
         learning_rate=args.lr,
+        lr_scheduler_type=args.lr_scheduler,
+        warmup_steps=args.warmup_steps,
         epsilon=args.epsilon,
         beta=args.beta,
         output_dir=args.output_dir,
@@ -199,6 +214,7 @@ def main() -> None:
         gradient_checkpointing=args.gradient_checkpointing,
         empty_cache_between_phases=args.empty_cache_between_phases,
         max_grad_norm=args.max_grad_norm,
+        scale_rewards=args.scale_rewards,
     )
     trainer = FromScratchGRPOTrainer(
         policy_model=policy,

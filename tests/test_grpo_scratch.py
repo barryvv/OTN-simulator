@@ -57,6 +57,33 @@ def test_group_relative_advantages_rejects_bad_batch():
         group_relative_advantages(torch.zeros(5), group_size=4)
 
 
+def test_group_relative_advantages_drgrpo_no_std_scaling():
+    """Dr. GRPO mode (scale_by_std=False) subtracts the group mean only.
+    A near-constant group must yield near-zero advantages instead of the
+    unit-magnitude noise that std-scaling would produce."""
+    # Group with a tiny 0.001 spread around 0.32 (mimics the flat OTN reward).
+    rewards = torch.tensor([0.320, 0.321, 0.319, 0.320])
+
+    adv_std = group_relative_advantages(rewards, 4, scale_by_std=True)
+    adv_mean_only = group_relative_advantages(rewards, 4, scale_by_std=False)
+
+    # Std-scaling blows the tiny spread up toward unit magnitude...
+    assert adv_std.abs().max().item() > 0.5
+    # ...while Dr. GRPO keeps it at the true (tiny) reward-difference scale.
+    assert adv_mean_only.abs().max().item() < 0.01
+    # Mean baseline is still exactly removed.
+    assert abs(adv_mean_only.mean().item()) < 1e-6
+
+
+def test_group_relative_advantages_degenerate_group_zeroed():
+    """With std-scaling on, a group below the min_std floor is zeroed
+    rather than divided by ~eps and exploded."""
+    rewards = torch.tensor([0.5, 0.5, 0.5, 0.5])
+    adv = group_relative_advantages(rewards, 4, scale_by_std=True, min_std=1e-4)
+    assert torch.isfinite(adv).all()
+    assert adv.abs().max().item() == 0.0
+
+
 # ─────────────────────────────────────────────────────────────
 # Loss
 # ─────────────────────────────────────────────────────────────
@@ -81,6 +108,46 @@ def test_grpo_loss_clipping_activates_for_large_ratios():
     # Mean surrogate = (1.0 + 1.2) / 2 = 1.1  =>  loss = -1.1
     assert abs(loss.item() - (-1.1)) < 1e-3
     assert metrics["fraction_clipped"] == 0.5
+
+
+def test_grpo_loss_token_level_matches_per_token_mean():
+    """Token-level mode averages the clipped surrogate over completion
+    tokens (per sequence), not over the summed sequence log-prob. Padding /
+    prompt positions are excluded via the completion_mask."""
+    # 2 sequences, 3 token positions each.
+    log_probs_new = torch.tensor([[0.0, 0.0, 0.0],
+                                  [1.5, 1.5, 0.0]])
+    log_probs_old = torch.zeros(2, 3)
+    advantages = torch.tensor([1.0, 1.0])
+    # Sequence 1 only has 2 real completion tokens; the 3rd is padding.
+    completion_mask = torch.tensor([[1, 1, 1],
+                                    [1, 1, 0]])
+
+    loss, metrics = grpo_loss(
+        log_probs_new=log_probs_new,
+        log_probs_old=log_probs_old,
+        advantages=advantages,
+        epsilon=0.2,
+        beta=0.0,
+        completion_mask=completion_mask,
+    )
+
+    # Seq 0: ratio=1 at all 3 tokens -> surrogate 1.0 each -> mean 1.0
+    # Seq 1: ratio=exp(1.5)~4.48 clipped to 1.2 at the 2 real tokens;
+    #        masked token excluded -> mean surrogate 1.2
+    # Batch mean of per-seq means = (1.0 + 1.2)/2 = 1.1 -> loss = -1.1
+    assert abs(loss.item() - (-1.1)) < 1e-3
+    # frac_clipped counts only masked tokens: 2 clipped / 5 real = 0.4
+    assert abs(metrics["fraction_clipped"] - 0.4) < 1e-6
+
+
+def test_grpo_loss_token_level_requires_mask():
+    with pytest.raises(ValueError):
+        grpo_loss(
+            log_probs_new=torch.zeros(2, 3),
+            log_probs_old=torch.zeros(2, 3),
+            advantages=torch.ones(2),
+        )
 
 
 def test_grpo_loss_kl_only_applied_when_beta_positive():
