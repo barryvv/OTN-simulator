@@ -1,0 +1,25 @@
+# The live RCA model endpoint on the serving cluster. Single GPU replica
+# (no horizontal GPU scaling on one card — throughput comes from vLLM
+# continuous batching). The AdapterPromotion controller patches the
+# `lora-modules` annotation to add/canary promoted adapters.
+apiVersion: serving.kserve.io/v1beta1
+kind: InferenceService
+metadata:
+  name: rca-7b
+  namespace: serving
+  annotations:
+    # Comma-separated name=s3://... modules; managed by AdapterPromotion.
+    otn.rca.dev/lora-modules: ""
+    # Pin to a single replica: one physical GPU.
+    serving.kserve.io/autoscalerClass: external
+spec:
+  predictor:
+    minReplicas: 1
+    maxReplicas: 1
+    nodeSelector:
+      otn.rca.dev/role: serving        # box-2
+    model:
+      runtime: vllm-qwen-lora
+      modelFormat:
+        name: vllm-lora
+      storageUri: "s3://models/qwen2.5-7b-base"   # base weights mirror

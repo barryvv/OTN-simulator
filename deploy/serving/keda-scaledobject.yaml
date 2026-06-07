@@ -1,0 +1,20 @@
+# Autoscale the CPU agent tier on request concurrency. The vLLM GPU pod is NOT
+# scaled here — it is pinned to one replica on the single serving GPU; vLLM's
+# continuous batching absorbs concurrency.
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: rca-agent-api
+  namespace: serving
+spec:
+  scaleTargetRef:
+    name: rca-agent-api
+  minReplicaCount: 2
+  maxReplicaCount: 12
+  triggers:
+    - type: prometheus
+      metadata:
+        serverAddress: http://prometheus.monitoring.svc:9090
+        metricName: rca_agent_inflight_requests
+        query: sum(rate(http_requests_inflight{app="rca-agent-api"}[1m]))
+        threshold: "8"

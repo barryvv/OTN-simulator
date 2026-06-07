@@ -1,0 +1,17 @@
+apiVersion: otn.rca.dev/v1alpha1
+kind: DatasetBuild
+metadata:
+  name: grpo-nightly
+  namespace: training
+spec:
+  type: grpo
+  numFailures: 200
+  parallelism: 16
+  topology:
+    numRoadms: 8
+    eg: 5
+    regenHops: 2
+  simulatorOverrides:
+    noise:
+      epsilon_sigma: 0.15
+  outputBucket: s3://datasets

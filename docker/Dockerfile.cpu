@@ -1,0 +1,37 @@
+# CPU image: simulator + data generation + the CPU serving microservices
+# (rca-agent-api, rca-tools-svc). No CUDA — keeps the image small and lets these
+# pods schedule on non-GPU nodes.
+#
+# Build (from repo root):
+#   docker build -f docker/Dockerfile.cpu -t <registry>/otn-rca-cpu:<tag> .
+#
+# Entry points are chosen at deploy time via `command:`/`args:`, e.g.
+#   python otn_simulator.py ...                       # simulation
+#   python generate_grpo_data.py ...                  # data gen
+#   uvicorn serving.rca_agent_api:app --host 0.0.0.0 --port 8080
+#   uvicorn serving.rca_tools_api:app --host 0.0.0.0 --port 8081
+FROM python:3.11-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    ARANGO_SKIP=1
+
+WORKDIR /app
+
+# System libs needed by pandas/matplotlib/networkx wheels.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential git \
+    && rm -rf /var/lib/apt/lists/*
+
+# CPU-only deps: simulator stack + serving stack. (No torch/transformers here.)
+COPY requirements.txt serving/requirements-serving.txt /app/_req/
+RUN pip install \
+        networkx pandas numpy pyyaml matplotlib \
+        -r /app/_req/serving/requirements-serving.txt
+
+COPY . /app
+
+EXPOSE 8080 8081
+# Default to the agent API; override in the Deployment for other roles.
+CMD ["uvicorn", "serving.rca_agent_api:app", "--host", "0.0.0.0", "--port", "8080"]

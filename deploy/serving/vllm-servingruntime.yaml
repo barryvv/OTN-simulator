@@ -1,0 +1,56 @@
+# KServe ServingRuntime for vLLM (OpenAI-compatible) on the dedicated serving
+# cluster (box-2, GPU2). Serves Qwen2.5-7B once and hot-loads promoted LoRA
+# adapters via --enable-lora; the AdapterPromotion controller adds adapters as
+# --lora-modules at promotion time.
+apiVersion: serving.kserve.io/v1alpha1
+kind: ClusterServingRuntime
+metadata:
+  name: vllm-qwen-lora
+spec:
+  supportedModelFormats:
+    - name: vllm-lora
+      autoSelect: true
+  protocolVersions:
+    - v2
+    - openAI
+  containers:
+    - name: kserve-container
+      image: vllm/vllm-openai:latest
+      args:
+        - "--model"
+        - "Qwen/Qwen2.5-7B-Instruct"
+        - "--served-model-name"
+        - "qwen2.5-7b"
+        - "--enable-lora"
+        - "--max-lora-rank"
+        - "16"
+        - "--max-loras"
+        - "4"
+        - "--gpu-memory-utilization"
+        - "0.90"
+        - "--max-model-len"
+        - "8192"
+        - "--port"
+        - "8080"
+      ports:
+        - containerPort: 8080
+          protocol: TCP
+      env:
+        - name: HF_HOME
+          value: /models/hf
+      resources:
+        limits:
+          nvidia.com/gpu: "1"      # whole GPU — no MIG on RTX 6000 Ada
+          cpu: "8"
+          memory: 32Gi
+        requests:
+          nvidia.com/gpu: "1"
+          cpu: "4"
+          memory: 24Gi
+      volumeMounts:
+        - name: hf-cache
+          mountPath: /models/hf
+  volumes:
+    - name: hf-cache
+      persistentVolumeClaim:
+        claimName: hf-cache

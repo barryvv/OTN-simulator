@@ -1,0 +1,7 @@
+# Extra deps for the serving wrappers (on top of the repo requirements).
+# The vLLM pod itself uses the vllm/vllm-openai image; these are only for
+# the CPU rca-agent-api / rca-tools-svc.
+fastapi>=0.110
+uvicorn[standard]>=0.29
+pydantic>=2.6
+requests>=2.31

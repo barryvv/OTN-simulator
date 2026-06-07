@@ -1,0 +1,34 @@
+# ArgoCD ApplicationSet — the federation glue. One source repo, fanned out to
+# both clusters by role. Cluster B (serving) is registered in ArgoCD as an
+# external destination; the AdapterPromotion controller additionally holds a
+# kubeconfig Secret for runtime KServe patches.
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: otn-rca-platform
+  namespace: argocd
+spec:
+  generators:
+    - list:
+        elements:
+          - cluster: training        # box-1
+            server: https://kubernetes.default.svc
+            path: deploy/overlays/training
+          - cluster: serving         # box-2
+            server: https://box-2.k8s.local:6443
+            path: deploy/overlays/serving
+  template:
+    metadata:
+      name: "otn-rca-{{cluster}}"
+    spec:
+      project: default
+      source:
+        repoURL: https://github.com/barryvv/OTN-simulator.git
+        targetRevision: main
+        path: "{{path}}"
+      destination:
+        server: "{{server}}"
+        namespace: otn-rca
+      syncPolicy:
+        automated: {prune: true, selfHeal: true}
+        syncOptions: [CreateNamespace=true]

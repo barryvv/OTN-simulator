@@ -1,0 +1,84 @@
+# AdapterPromotion CRD — the cross-cluster promotion path Kubeflow does not
+# provide. Reconciled by the AdapterPromotion controller on the training/control
+# cluster (box-1): runs evaluate.py as an eval gate, and on pass patches the
+# KServe InferenceService on the serving cluster (box-2) to canary the adapter.
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: adapterpromotions.otn.rca.dev
+spec:
+  group: otn.rca.dev
+  scope: Namespaced
+  names:
+    kind: AdapterPromotion
+    plural: adapterpromotions
+    singular: adapterpromotion
+    shortNames: ["promo"]
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          required: ["spec"]
+          properties:
+            spec:
+              type: object
+              required: ["adapterURI", "endpoint", "evalDataset"]
+              properties:
+                adapterURI:
+                  type: string
+                  description: s3:// URI of the trained LoRA adapter (or merged model).
+                endpoint:
+                  type: string
+                  description: Name of the KServe InferenceService on the serving cluster.
+                servingCluster:
+                  type: string
+                  default: "serving"
+                  description: Key into the cross-cluster kubeconfig Secret.
+                evalDataset:
+                  type: string
+                  description: s3:// URI of the held-out eval JSONL.
+                gate:
+                  type: object
+                  description: Minimum metrics required to promote.
+                  properties:
+                    eventAcc: {type: number, default: 0.70}
+                    boardF1: {type: number, default: 0.60}
+                    e2eScore: {type: number, default: 0.65}
+                canaryPercent:
+                  type: integer
+                  default: 10
+                  minimum: 0
+                  maximum: 100
+                autoPromote:
+                  type: boolean
+                  default: true
+                  description: Promote canary→100% automatically if healthy.
+            status:
+              type: object
+              properties:
+                phase:
+                  type: string
+                  enum: ["Pending", "Evaluating", "Gated", "Canary", "Promoted", "RolledBack", "Failed"]
+                metrics:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                baselineMetrics:
+                  type: object
+                  x-kubernetes-preserve-unknown-fields: true
+                loraModuleName: {type: string}
+                message: {type: string}
+      additionalPrinterColumns:
+        - name: Endpoint
+          type: string
+          jsonPath: .spec.endpoint
+        - name: Phase
+          type: string
+          jsonPath: .status.phase
+        - name: e2e
+          type: string
+          jsonPath: .status.metrics.e2eScore
+      subresources:
+        status: {}

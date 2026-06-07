@@ -1,0 +1,28 @@
+# NVIDIA GPU Operator time-slicing config. RTX 6000 Ada does NOT support MIG,
+# so this is the only way to oversubscribe a card — and it gives NO memory
+# isolation. Use ONLY on the training cluster for CPU-light / dev pods; real
+# training and the serving vLLM pod must request a whole GPU.
+#
+# Apply, then label nodes to opt-in:
+#   kubectl label node <box-1-node> nvidia.com/device-plugin.config=dev-4x
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: device-plugin-config
+  namespace: gpu-operator
+data:
+  # Default profile = no slicing (whole-GPU). Real jobs use this.
+  default: |-
+    version: v1
+    flags:
+      migStrategy: none
+  # Dev profile = 4 logical GPUs per physical card (shared memory!).
+  dev-4x: |-
+    version: v1
+    flags:
+      migStrategy: none
+    sharing:
+      timeSlicing:
+        resources:
+          - name: nvidia.com/gpu
+            replicas: 4

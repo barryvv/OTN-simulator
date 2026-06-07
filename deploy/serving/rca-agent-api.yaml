@@ -1,0 +1,50 @@
+# rca-agent-api: CPU request-facing service that runs the ReAct loop against the
+# vLLM endpoint. Stateless → autoscaled by KEDA (see keda-scaledobject.yaml).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rca-agent-api
+  namespace: serving
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: rca-agent-api}
+  template:
+    metadata:
+      labels: {app: rca-agent-api}
+    spec:
+      containers:
+        - name: api
+          image: REGISTRY/otn-rca-cpu:latest   # docker/Dockerfile.cpu
+          command: ["uvicorn", "serving.rca_agent_api:app",
+                    "--host", "0.0.0.0", "--port", "8080"]
+          ports: [{containerPort: 8080}]
+          env:
+            - {name: VLLM_API_URL, value: "http://rca-7b-predictor.serving.svc.cluster.local/v1"}
+            - {name: VLLM_MODEL, value: "qwen2.5-7b"}
+            - {name: TOPOLOGY_YAML, value: "/data/topology.yaml"}
+            - {name: LIGHTPATHS_FILE, value: "/data/lightpaths.txt"}
+            - {name: RULES_PATH, value: "/data/rule_database.csv"}
+            - {name: TRAINING_DATA, value: "/data/grpo_train.jsonl"}
+            - {name: MAX_STEPS, value: "10"}
+          volumeMounts:
+            - {name: rca-data, mountPath: /data}
+          readinessProbe:
+            httpGet: {path: /readyz, port: 8080}
+          livenessProbe:
+            httpGet: {path: /healthz, port: 8080}
+          resources:
+            requests: {cpu: "1", memory: 2Gi}
+            limits: {cpu: "2", memory: 4Gi}
+      volumes:
+        - name: rca-data
+          persistentVolumeClaim: {claimName: rca-reference-data}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rca-agent-api
+  namespace: serving
+spec:
+  selector: {app: rca-agent-api}
+  ports: [{port: 80, targetPort: 8080}]

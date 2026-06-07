@@ -1,0 +1,46 @@
+# rca-tools-svc: OPTIONAL standalone tools microservice. rca-agent-api runs the
+# tools in-process by default; deploy this only when you want to scale tool
+# execution (or data locality) independently of the agent loop.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rca-tools-svc
+  namespace: serving
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: rca-tools-svc}
+  template:
+    metadata:
+      labels: {app: rca-tools-svc}
+    spec:
+      containers:
+        - name: tools
+          image: REGISTRY/otn-rca-cpu:latest   # docker/Dockerfile.cpu
+          command: ["uvicorn", "serving.rca_tools_api:app",
+                    "--host", "0.0.0.0", "--port", "8081"]
+          ports: [{containerPort: 8081}]
+          env:
+            - {name: TOPOLOGY_YAML, value: "/data/topology.yaml"}
+            - {name: LIGHTPATHS_FILE, value: "/data/lightpaths.txt"}
+            - {name: RULES_PATH, value: "/data/rule_database.csv"}
+            - {name: TRAINING_DATA, value: "/data/grpo_train.jsonl"}
+          volumeMounts:
+            - {name: rca-data, mountPath: /data}
+          readinessProbe:
+            httpGet: {path: /healthz, port: 8081}
+          resources:
+            requests: {cpu: "500m", memory: 1Gi}
+            limits: {cpu: "2", memory: 2Gi}
+      volumes:
+        - name: rca-data
+          persistentVolumeClaim: {claimName: rca-reference-data}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rca-tools-svc
+  namespace: serving
+spec:
+  selector: {app: rca-tools-svc}
+  ports: [{port: 80, targetPort: 8081}]

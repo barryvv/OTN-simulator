@@ -1,0 +1,40 @@
+# GPU image: LoRA training (SFT + GRPO) and GPU evaluation. Built on a CUDA
+# PyTorch base so it runs on the RTX 6000 Ada training nodes (box-1).
+#
+# The dedicated vLLM serving pod does NOT use this image — it uses the upstream
+# `vllm/vllm-openai` image (see deploy/serving/vllm-servingruntime.yaml). This
+# image is for: train_sft_qwen7b.py, train_grpo_gemma3b.py, train_grpo_scratch.py,
+# evaluate.py (--run-inference), and merge_adapter.py.
+#
+# Build (from repo root):
+#   docker build -f docker/Dockerfile.gpu -t <registry>/otn-rca-gpu:<tag> .
+FROM pytorch/pytorch:2.4.0-cuda12.1-cudnn9-runtime
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    HF_HOME=/models/hf \
+    PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Pin the ML stack used by the trainers (torch comes from the base image).
+RUN pip install \
+        "transformers>=4.44" \
+        "peft>=0.12" \
+        "trl>=0.9" \
+        "datasets>=2.20" \
+        "accelerate>=0.33" \
+        networkx pandas numpy pyyaml
+
+COPY . /app
+
+# HF cache is mounted as a PVC at /models/hf so base weights are pulled once.
+VOLUME ["/models/hf"]
+
+# Entry point is set per-Job (PyTorchJob) at deploy time, e.g.
+#   python train_grpo_scratch.py --reward-fn continuous --group-size 8 ...
+CMD ["python", "-c", "import torch; print('cuda', torch.cuda.is_available())"]
